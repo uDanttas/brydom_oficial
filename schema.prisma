@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  role      String   @default("cliente") // "mestre" ou "cliente"
+  balance   Float    @default(0.0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+  botOperations BotOperation[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "deposito", "saque"
+  amount    Float
+  status    String   @default("pending") // "pending", "completed", "failed"
+  pixKey    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("transactions")
+}
+
+model BotOperation {
+  id           String   @id @default(cuid())
+  userId       String
+  symbol       String   // "BTCUSDT", "ETHUSDT", etc.
+  type         String   // "BUY", "SELL"
+  amount       Float
+  price        Float
+  profit       Float
+  confidence   Float
+  status       String   @default("completed") // "completed", "failed"
+  executedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("bot_operations")
+}
+
+model BotConfig {
+  id                String   @id @default(cuid())
+  isActive          Boolean  @default(true)
+  intervalSeconds   Int      @default(10)
+  minProfitTarget   Float    @default(5.0)
+  maxProfitTarget   Float    @default(10.0)
+  riskLevel         Float    @default(0.1)
+  quantumPrecision  Float    @default(99.999)
+  updatedAt         DateTime @updatedAt
+
+  @@map("bot_config")
+}
+
